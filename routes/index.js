@@ -8,7 +8,6 @@
 
 const express = require('express');
 const app = express();
-const ENV = process.env.ENV || "development";
 const bodyParser = require('body-parser');
 const cookieSession = require('cookie-session');
 const router = express.Router();
@@ -27,7 +26,7 @@ app.use(cookieSession({
 module.exports = (db) => {
   router.get("/", (req, res) => {
     if (req.session.user) {
-      res.redirect('/index');
+      res.redirect('/portfolio');
     } else {
       res.redirect('/login');
     }
@@ -81,16 +80,42 @@ module.exports = (db) => {
         } else {
           let found = false;
           console.log("Bad url, symbol not found")
+          return Promise.reject('error 404')
         }
       })
       .then(data => {
         let stockPrice = data.latestPrice
         let totalCost = stockPrice * shares
-        console.log("Stock Price is " + stockPrice)
+        console.log("Stock price is " + stockPrice)
         console.log("The total cost is " + totalCost)
+
+        let queryString = `
+        SELECT balance FROM users
+        WHERE id = $1
+        `;
+        db.query(queryString, [req.session.user.id])
+          .then((data) => {
+            let balance = Number(data.rows[0].balance);
+            return balance = balance - totalCost;
+          })
+          .catch(err => {
+            res.status(500).send({ error: err.message });
+          })
+
+        queryString =`
+        INSERT INTO transactions (symbol, shares, price, user_id)
+        VALUES ($1, $2, $3, $4);
+        `;
+        db.query(queryString, [data.symbol, shares, stockPrice, req.session.user.id])
+          .then(() => {
+            res.redirect(200, '/portfolio');
+          })
+          .catch(err => {
+            res.status(500).send({ error: err.message });
+          })
       })
       .catch(err => {
-        res.status(500).send(err.message);
+        res.status(500).send("ERROR 404, symbol not found");
       });
   })
 
