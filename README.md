@@ -36,5 +36,5 @@ visit http://localhost:8080/ in your browser
 
 ## Screenshots of work in progress
 
-!["Screenshot of quote"]()
-!["Screenshot of portfolio"]()
+!["Screenshot of quote"](https://raw.githubusercontent.com/firebfm/stock-market-track/master/docs/quote.jpg)
+!["Screenshot of portfolio"](https://raw.githubusercontent.com/firebfm/stock-market-track/master/docs/portfolio.jpg)
