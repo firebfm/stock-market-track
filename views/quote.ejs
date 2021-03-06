@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+  <link rel="stylesheet" href="/style.css" />
+  <title>Stock Market Track</title>
+</head>
+<body>
+  <%- include('partials/_header') %>
+  <h2>Search a stock symbol for the price</h2>
+  <main class="container p-5">    
+    <form action="/quote" method="post">
+      <div class="form-group">
+        <input autocomplete="off" autofocus="" class="form-control" name="symbol" placeholder="Symbol" type="text">
+      </div>
+      <button class="btn btn-primary" type="submit">Quote</button>
+    </form>
+  </main>
+  <% if (stock) { %>
+    <p>Symbol: <%= stock.symbol %></p>
+    <p>Company: <%= stock.companyName %></p>
+    <p>Lastest Price: <%= stock.latestPrice %></p>
+    <p>The stock <%= stock.symbol %> has a price of <%= stock.latestPrice %></p>
+    <% } %>
+</body>
+</html>

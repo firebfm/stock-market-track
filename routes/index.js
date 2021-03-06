@@ -13,8 +13,8 @@ const bodyParser = require('body-parser');
 const cookieSession = require('cookie-session');
 const router = express.Router();
 const moment = require('moment');
-const e = require('express');
 moment().format();
+const fetch = require("node-fetch");
 
 router.use(bodyParser.urlencoded({ extended: true }));
 router.use(bodyParser.json());
@@ -32,6 +32,33 @@ module.exports = (db) => {
       res.redirect('/login');
     }
   })
+
+  router.get("/quote", (req, res) => {
+    let templateVars = { user: req.session.user, stock: null }
+    res.render("quote", templateVars);
+  });
+
+  router.post("/quote", (req, res) => {
+    let url = `https://cloud-sse.iexapis.com/stable/stock/${req.body.symbol}/quote?token=` + process.env.API_KEY;
+
+    fetch(url)
+      .then(res => {
+        if (res.ok) {
+          console.log("SUCCESS")
+          return res.json()
+        } else {
+          console.log("Bad url, symbol not found")
+        }
+      })
+      .then(data => {
+        // json data is stored
+        let templateVars = { user: req.session.user, stock: data };
+        res.render("quote", templateVars);
+      })
+      .catch(err => {
+        res.status(500).send(err.message);
+      });
+  });
 
   router.get("/portfolio", (req, res) => {
     const templateVars = { user: req.session.user };
