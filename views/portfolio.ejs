@@ -12,5 +12,27 @@
 <body>
   <%- include('partials/_header') %>
   <h2>My portfolio</h2>
+  <% if (user) { %>
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Symbol</th>
+        <th scope="col">Name</th>
+        <th scope="col">Shares</th>
+        <th scope="col">Current Price</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% for(let item of arr) { %>
+        <tr>
+          <td><%= item.symbol %></td>
+          <td>Lookup company name</td>
+          <td><%= item.shares %></td>
+          <td>Lookup latest price</td>
+        </tr>
+      <% } %>
+    </tbody>
+  </table>
+  <% } %>
 </body>
 </html>

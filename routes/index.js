@@ -70,8 +70,8 @@ module.exports = (db) => {
   });
 
   router.post("/buy", (req, res) => {
-    let url = `https://cloud-sse.iexapis.com/stable/stock/${req.body.symbol}/quote?token=` + process.env.API_KEY;
     let shares = req.body.shares
+    let url = `https://cloud-sse.iexapis.com/stable/stock/${req.body.symbol}/quote?token=` + process.env.API_KEY;
 
     fetch(url)
       .then(res => {
@@ -95,9 +95,41 @@ module.exports = (db) => {
   })
 
   router.get("/portfolio", (req, res) => {
-    const templateVars = { user: req.session.user };
     if (req.session.user) {
-      res.render("portfolio", templateVars);
+      db.query(`
+      SELECT * FROM transactions
+      WHERE user_id = $1;
+      ;`, [req.session.user.id])
+        .then(data => {
+          const shares = data.rows.reduce((acc, { symbol, price, shares }) => {
+            const existingShares = acc[symbol];
+          
+            if (!existingShares) acc[symbol] = 0;
+          
+            if (existingShares && price < 0) {
+              acc[symbol] -= shares;
+            } else if (price > 0) {
+              acc[symbol] += shares;
+            }
+          
+            return acc;
+          
+          }, {});
+          
+          // output = [{symbol: '' , shares: #}]
+          const output = Object.keys(shares)
+            .sort((shareA, shareB) => shareA > shareB ? 1 : -1)
+            .map(symbol => {
+              const total = shares[symbol];
+          
+            return { symbol, shares: total }
+          })
+          const templateVars = { user: req.session.user, arr: output};
+          res.render("portfolio", templateVars);
+        })
+        .catch(err => {
+          console.log("ERROR")
+        });
     } else {
       res.redirect('/login');
     }
