@@ -143,6 +143,17 @@ module.exports = (db) => {
 
   router.get("/portfolio", (req, res) => {
     if (req.session.user) {
+
+      let balance = 0;
+      let queryString = `
+      SELECT balance FROM users
+      WHERE id = $1
+      `;
+      db.query(queryString, [req.session.user.id])
+        .then((dataB) => {
+          return balance = dataB.rows[0].balance
+        })
+
       db.query(`
       SELECT * FROM transactions
       WHERE user_id = $1;
@@ -171,7 +182,7 @@ module.exports = (db) => {
           
             return { symbol, shares: total }
           })
-          const templateVars = { user: req.session.user, arr: output};
+          const templateVars = { user: req.session.user, arr: output, balance: balance};
           res.render("portfolio", templateVars);
         })
         .catch(err => {
