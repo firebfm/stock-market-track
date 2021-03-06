@@ -101,6 +101,10 @@ module.exports = (db) => {
             let balance = Number(data.rows[0].balance);
             balance = balance - totalCost;
             
+            if (balance < 0) {
+              res.status(500).send("NOT ENOUGH CASH");
+            }
+
             // update balance
             queryString =`
             UPDATE users SET balance = $1
