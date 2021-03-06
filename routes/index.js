@@ -26,7 +26,7 @@ app.use(cookieSession({
 
 module.exports = (db) => {
   router.get("/", (req, res) => {
-    if (req.session.user_id) {
+    if (req.session.user) {
       res.redirect('/index');
     } else {
       res.redirect('/login');
@@ -59,6 +59,40 @@ module.exports = (db) => {
         res.status(500).send(err.message);
       });
   });
+
+  router.get("/buy", (req, res) => {
+    if (req.session.user) {
+      let templateVars = { user: req.session.user }
+      res.render("buy", templateVars);
+    } else {
+      res.redirect('/login');
+    }
+  });
+
+  router.post("/buy", (req, res) => {
+    let url = `https://cloud-sse.iexapis.com/stable/stock/${req.body.symbol}/quote?token=` + process.env.API_KEY;
+    let shares = req.body.shares
+
+    fetch(url)
+      .then(res => {
+        if (res.ok) {
+          console.log("SUCCESS")
+          return res.json()
+        } else {
+          let found = false;
+          console.log("Bad url, symbol not found")
+        }
+      })
+      .then(data => {
+        let stockPrice = data.latestPrice
+        let totalCost = stockPrice * shares
+        console.log("Stock Price is " + stockPrice)
+        console.log("The total cost is " + totalCost)
+      })
+      .catch(err => {
+        res.status(500).send(err.message);
+      });
+  })
 
   router.get("/portfolio", (req, res) => {
     const templateVars = { user: req.session.user };
