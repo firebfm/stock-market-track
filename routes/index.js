@@ -193,6 +193,88 @@ module.exports = (db) => {
     }
   });
 
+  router.get("/sell", (req, res) => {
+    if (req.session.user) {
+      let templateVars = { user: req.session.user }
+      res.render("sell", templateVars);
+    } else {
+      res.redirect('/login');
+    }
+  });
+
+  router.post("/sell", (req, res) => {
+    let shares = req.body.shares
+    let url = `https://cloud-sse.iexapis.com/stable/stock/${req.body.symbol}/quote?token=` + process.env.API_KEY;
+
+    fetch(url)
+      .then(res => {
+        if (res.ok) {
+          console.log("SUCCESS")
+          return res.json()
+        } else {
+          let found = false;
+          console.log("Bad url, symbol not found")
+          return Promise.reject('error 404')
+        }
+      })
+      .then(data => {
+        let stockPrice = data.latestPrice;
+        let totalCost = stockPrice * shares;
+        let symbol = data.symbol;
+
+        console.log("Stock price is " + stockPrice)
+        console.log("The total cost is " + totalCost)
+
+        // get current balance, then add totalCost
+        let queryString = `
+        SELECT balance FROM users
+        WHERE id = $1
+        `;
+        db.query(queryString, [req.session.user.id])
+          .then((data) => {
+            let balance = Number(data.rows[0].balance);
+            balance = balance + totalCost;
+            
+            // update balance
+            queryString =`
+            UPDATE users SET balance = $1
+            WHERE id = $2
+            RETURNING balance;
+            `;
+            db.query(queryString, [balance, req.session.user.id])
+              .then(() => {
+                // console.log("BALANCE IS " + JSON.stringify(balance.rows[0].balance))
+              })
+              .catch(err => {
+                res.status(500).send({ error: err.message });
+              })
+          })
+          .catch(err => {
+            res.status(500).send({ error: err.message });
+          })
+        
+        // insert into transactions a negative stock price
+        queryString =`
+        INSERT INTO transactions (symbol, shares, price, user_id)
+        VALUES ($1, $2, $3, $4);
+        `;
+        db.query(queryString, [symbol, shares, stockPrice*-1, req.session.user.id])
+          .then(() => {
+            res.redirect(200, '/portfolio');
+          })
+          .catch(err => {
+            res.status(500).send({ error: err.message });
+          })
+        .catch(err => {
+          res.status(500).send("ERROR 404, symbol not found");
+        });
+
+      })
+      .catch(err => {
+        res.status(500).send("ERROR 404, symbol not found");
+      });
+  })
+
   router.get("/login", (req, res) => {
     const templateVars = { user: req.session.user };
     res.render("login", templateVars);
